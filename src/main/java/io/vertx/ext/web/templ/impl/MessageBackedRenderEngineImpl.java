@@ -1,6 +1,7 @@
 package io.vertx.ext.web.templ.impl;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -94,6 +95,7 @@ public class MessageBackedRenderEngineImpl extends CachingTemplateEngine<String>
       eventBus.send(this.rendererAddress, meta, response -> {
         if (response.failed()) {
           context.put(componentName, "");
+          handler.handle(Future.failedFuture(response.cause()));
           return;
         }
 
