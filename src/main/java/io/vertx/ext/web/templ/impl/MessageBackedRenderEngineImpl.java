@@ -4,38 +4,29 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.templ.MessageBackedRenderEngine;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.AbstractList;
 
 /**
  * MBRE implementation
  *
  * @author David Stancu
  */
-public class MessageBackedRenderEngineImpl implements MessageBackedRenderEngine {
+public class MessageBackedRenderEngineImpl extends CachingTemplateEngine<String> implements MessageBackedRenderEngine {
   private final Vertx vertx;
+  private final EventBus eventBus;
   private String rendererAddress;
 
-  private boolean exceptionOnRenderMiss = EXCEPTION_ON_RENDER_MISS;
   private String componentContextKey = COMPONENT_CONTEXT_KEY;
 
   public MessageBackedRenderEngineImpl(Vertx vertx) {
+    super("", DEFAULT_CACHE_SIZE);
     this.vertx = vertx;
-    this.rendererAddress = this.getClass().getSimpleName() + "-render";
-  }
-
-  /**
-   * Create a new instance of a MessageBackedRenderEngine.
-   * @param vertx
-   * @param rendererAddress
-   */
-  public MessageBackedRenderEngineImpl(Vertx vertx, String rendererAddress) {
-    this.vertx = vertx;
-    this.rendererAddress = rendererAddress;
+    this.eventBus = vertx.eventBus();
   }
 
   /**
@@ -59,27 +50,61 @@ public class MessageBackedRenderEngineImpl implements MessageBackedRenderEngine 
   }
 
   /**
-   * If a service does not respond with a render component, do we fail?
-   * @param exceptionOnRenderMiss Yes or no
+   * Change size of LRU cache from CachingTemplateEngine<T>
+   *
+   * @param max Max size
    * @return
    */
-  public MessageBackedRenderEngine setExceptionOnRenderMiss(boolean exceptionOnRenderMiss) {
-    this.exceptionOnRenderMiss = exceptionOnRenderMiss;
+  public MessageBackedRenderEngine setMaxCacheSize(int max) {
+    this.cache.setMaxSize(max);
     return this;
   }
 
-  public void render(RoutingContext context, String _templateDirector, String _templateFileName, Handler<AsyncResult<Buffer>> handler) {
-    Map<String, Object> renderedData = new HashMap<String, Object>();
+  /**
+   * Render components by publishing messages to SSR services.
+   * @param context Routing context object
+   * @param _tDir (Unused)
+   * @param _tFileName
+   * @param handler
+   */
+  public void render(RoutingContext context, String _tDir, String _tFileName, Handler<AsyncResult<Buffer>> handler) {
+    Object components = context.data().get(this.componentContextKey);
+    if (!(components instanceof AbstractList)) return;
 
-    context.data().entrySet().parallelStream().forEach(entry -> {
-      // TODO: place condition / 'component' token here
-      // TODO: fastest way to substr????
+    // TODO: There has to be a more elegant way to do this, maybe
+    // TODO: filtering to expected shape is cheaper?
+    ((AbstractList) components).parallelStream().forEach(meta -> {
+      if (!(meta instanceof JsonObject)) return;
+      JsonObject metaObject = (JsonObject) meta;
 
-      vertx.eventBus().send(this.rendererAddress, entry, res -> {
-        renderedData.put(entry.getKey(), res.result());
+      String componentName = metaObject.getString("name");
+      JsonObject props = metaObject.getJsonObject("props");
+      // TODO: look at hashCode() for JsonObject maybe you're doing
+      // TODO: too much work here
+      String propsKey = Integer.toString(props.toString().hashCode());
+
+      if (isCachingEnabled()) {
+        String alreadyRendered = cache.get(propsKey);
+        if (alreadyRendered != null) {
+          context.put(componentName, alreadyRendered);
+          return;
+        }
+      }
+
+      eventBus.send(this.rendererAddress, meta, response -> {
+        if (response.failed()) {
+          context.put(componentName, "");
+          return;
+        }
+
+        String rendered = response.result().body().toString();
+        if (isCachingEnabled()) cache.put(propsKey, rendered);
+        context.put(componentName, rendered);
       });
     });
+  }
 
-    context.data().putAll(renderedData);
+  public void render(RoutingContext context, Handler<AsyncResult<Buffer>> handler) {
+    render(context, null, null, handler);
   }
 }

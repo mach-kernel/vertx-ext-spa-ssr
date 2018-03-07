@@ -10,6 +10,6 @@ import io.vertx.ext.web.templ.impl.MessageBackedRenderEngineImpl;
  * @author David Stancu
  */
 public interface MessageBackedRenderEngine extends TemplateEngine {
-  boolean EXCEPTION_ON_RENDER_MISS = false;
   String COMPONENT_CONTEXT_KEY = "components";
+  int DEFAULT_CACHE_SIZE = 1000;
 }

@@ -1,2 +1,2 @@
-# vertx-ext-react-ssr
-High performance parallel React server-side rendering for vert.x
+# vertx-ext-spa-ssr
+High performance parallel JavaScript SPA server-side rendering for vert.x.
