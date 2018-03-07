@@ -14,8 +14,8 @@ import java.util.ArrayList;
  *
  * @author David Stancu
  */
-public class StackableTemplateEngineImpl implements TemplateEngine {
-  private final ArrayList<TemplateEngine> engines = new ArrayList<TemplateEngine>();
+public class StackableTemplateEngineImpl implements StackableTemplateEngine {
+  private final ArrayList<TemplateEngine> engines = new ArrayList<>();
 
   /**
    * Add template engines to the list. The output of the last will be passed to the
