@@ -7,6 +7,9 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.templ.MessageBackedRenderEngine;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * MBRE implementation
  *
@@ -27,6 +30,17 @@ public class MessageBackedRenderEngineImpl implements MessageBackedRenderEngine 
   }
 
   public void render(RoutingContext context, String _templateDirector, String _templateFileName, Handler<AsyncResult<Buffer>> handler) {
-//    context.data().entrySet().parallelStream().collect(...
+    Map<String, Object> renderedData = new HashMap<String, Object>();
+
+    context.data().entrySet().parallelStream().forEach(entry -> {
+      // TODO: place condition / 'component' token here
+      // TODO: fastest way to substr????
+
+      vertx.eventBus().send(this.rendererAddress, entry, res -> {
+        renderedData.put(entry.getKey(), res.result());
+      });
+    });
+
+    context.data().putAll(renderedData);
   }
 }
