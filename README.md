@@ -1,2 +1,4 @@
 # vertx-ext-spa-ssr
-High performance parallel JavaScript SPA server-side rendering for vert.x.
+Render SPA components in parallel over the vert.x event bus with a template engine harness.
+
+Currently work in progress!
