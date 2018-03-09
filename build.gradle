@@ -7,8 +7,8 @@
 
 def vertxVersion = '3.5.1'
 
-apply plugin: 'application'
 apply plugin: 'java'
+apply plugin: 'java-library'
 
 repositories {
     mavenCentral()
@@ -21,3 +21,9 @@ dependencies {
     compile "io.vertx:vertx-web:${vertxVersion}"
 }
 
+jar {
+    manifest {
+        attributes('Implementation-Title': project.name,
+                   'Implementation-Version': project.version)
+    }
+}

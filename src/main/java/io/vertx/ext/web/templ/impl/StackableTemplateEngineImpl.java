@@ -28,6 +28,13 @@ public class StackableTemplateEngineImpl implements StackableTemplateEngine {
     return this;
   }
 
+  /**
+   * Render stack
+   * @param context
+   * @param templateDirectory
+   * @param templateFileName
+   * @param handler
+   */
   @Override
   public void render(RoutingContext context, String templateDirectory, String templateFileName, Handler<AsyncResult<Buffer>> handler) {
     engines.forEach(engine -> engine.render(context, templateDirectory, templateFileName, handler));
