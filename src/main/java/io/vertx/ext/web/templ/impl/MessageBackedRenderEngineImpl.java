@@ -27,7 +27,7 @@ public class MessageBackedRenderEngineImpl extends CachingTemplateEngine<String>
   private String componentContextKey = COMPONENT_CONTEXT_KEY;
 
   public MessageBackedRenderEngineImpl(Vertx vertx) {
-    super("", DEFAULT_CACHE_SIZE);
+    super(".nop", DEFAULT_CACHE_SIZE);
     this.vertx = vertx;
     this.eventBus = vertx.eventBus();
   }
