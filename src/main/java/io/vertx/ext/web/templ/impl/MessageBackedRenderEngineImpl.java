@@ -6,13 +6,12 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.templ.MessageBackedRenderEngine;
 
 import java.util.AbstractList;
-import java.util.stream.Stream;
+import java.util.List;
 
 /**
  * MBRE implementation
@@ -70,14 +69,15 @@ public class MessageBackedRenderEngineImpl extends CachingTemplateEngine<String>
    * @param _tFileName
    * @param handler
    */
+  @SuppressWarnings("unchecked")
   public void render(RoutingContext context, String _tDir, String _tFileName, Handler<AsyncResult<Buffer>> handler) {
     Object components = context.data().get(this.componentContextKey);
     if (!(components instanceof AbstractList)) return;
-    Stream<Object> componentStream = Stream.of(components);
+    List<Object> componentList = (AbstractList) components;
 
     // TODO: There has to be a more elegant way to do this, maybe
     // TODO: filtering to expected shape is cheaper?
-    componentStream.parallel().forEach(meta -> {
+    componentList.parallelStream().parallel().forEach(meta -> {
       if (!(meta instanceof JsonObject)) return;
       JsonObject metaObject = (JsonObject) meta;
 
