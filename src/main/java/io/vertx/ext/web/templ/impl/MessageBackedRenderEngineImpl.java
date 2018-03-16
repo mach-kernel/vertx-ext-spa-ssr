@@ -6,12 +6,21 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.templ.MessageBackedRenderEngine;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.parser.Parser;
 
 import java.util.AbstractList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentNavigableMap;
 
 /**
  * MBRE implementation
@@ -75,6 +84,8 @@ public class MessageBackedRenderEngineImpl extends CachingTemplateEngine<String>
     if (!(components instanceof AbstractList)) return;
     List<Object> componentList = (AbstractList) components;
 
+    ConcurrentHashMap<String, JsonObject> initialState = new ConcurrentHashMap<>();
+
     // TODO: There has to be a more elegant way to do this, maybe
     // TODO: filtering to expected shape is cheaper?
     componentList.parallelStream().parallel().forEach(meta -> {
@@ -86,6 +97,8 @@ public class MessageBackedRenderEngineImpl extends CachingTemplateEngine<String>
       // TODO: look at hashCode() for JsonObject maybe you're doing
       // TODO: too much work here
       String propsKey = Integer.toString(props.toString().hashCode());
+
+      initialState.put("cmpnt-" + token, props);
 
       if (isCachingEnabled()) {
         String alreadyRendered = cache.get(propsKey);
@@ -102,11 +115,20 @@ public class MessageBackedRenderEngineImpl extends CachingTemplateEngine<String>
           return;
         }
 
-        String rendered = response.result().body().toString();
+        // To aid hydration
+        Element component = Jsoup.parse(response.result().body().toString(), "", Parser.xmlParser());
+        Node componentDiv = component.childNode(0);
+
+        componentDiv.attr("id", "cmpnt-" + token);
+        componentDiv.attr("react-kind", metaObject.getString("name"));
+
+        String rendered = component.toString();
         if (isCachingEnabled()) cache.put(propsKey, rendered);
         context.put(token, rendered);
       });
     });
+
+    context.put("_ssrState", Json.encode(initialState));
   }
 
   public void render(RoutingContext context, Handler<AsyncResult<Buffer>> handler) {
