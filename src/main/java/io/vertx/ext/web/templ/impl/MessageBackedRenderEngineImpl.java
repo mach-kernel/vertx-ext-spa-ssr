@@ -81,7 +81,7 @@ public class MessageBackedRenderEngineImpl extends CachingTemplateEngine<String>
       if (!(meta instanceof JsonObject)) return;
       JsonObject metaObject = (JsonObject) meta;
 
-      String componentName = metaObject.getString("name");
+      String token = metaObject.getString("token");
       JsonObject props = metaObject.getJsonObject("props");
       // TODO: look at hashCode() for JsonObject maybe you're doing
       // TODO: too much work here
@@ -90,21 +90,21 @@ public class MessageBackedRenderEngineImpl extends CachingTemplateEngine<String>
       if (isCachingEnabled()) {
         String alreadyRendered = cache.get(propsKey);
         if (alreadyRendered != null) {
-          context.put(componentName, alreadyRendered);
+          context.put(token, alreadyRendered);
           return;
         }
       }
 
       eventBus.send(this.rendererAddress, meta, response -> {
         if (response.failed()) {
-          context.put(componentName, "");
+          context.put(token, "");
           handler.handle(Future.failedFuture(response.cause()));
           return;
         }
 
         String rendered = response.result().body().toString();
         if (isCachingEnabled()) cache.put(propsKey, rendered);
-        context.put(componentName, rendered);
+        context.put(token, rendered);
       });
     });
   }

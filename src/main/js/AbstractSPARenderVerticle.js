@@ -5,13 +5,19 @@ export class AbstractSPARenderVerticle {
   /**
    * Create a new SPA render service.
    * @param componentMap
+   * @param consumerAddress
    */
-  constructor(componentMap) {
+  constructor(componentMap, consumerAddress = "vertx.spa.render") {
     this.componentMap = componentMap;
     vertx.eventBus().consumer(
-      "vertx.spa.render",
+      consumerAddress,
       this.onRenderRequest.bind(this)
     );
+
+    this.vertxLogger = Java.type("io.vertx.core.logging.LoggerFactory")
+                           .getLogger("vertx-ext-spa-ssr");
+
+    this.vertxLogger.info("SSR verticle ready!");
   }
 
   /**

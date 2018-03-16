@@ -2,16 +2,21 @@
   "name": "vertx-ext-spa-ssr",
   "version": "1.0.0",
   "description": "Nashorn middleware for vert.x server-side rendering",
-  "main": "index.js",
+  "main": "dist/main/js/index.js",
   "repository": "git@github.com:mach-kernel/vertx-ext-react-ssr.git",
   "author": "David Stancu <dstancu@nyu.edu>",
   "license": "Apache-2",
   "dependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-plugin-transform-class": "^0.3.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-es2015": "^6.24.1",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "vue": "^2.5.13",
-    "vue-server-renderer": "^2.5.13",
-    "webpack": "^4.1.1",
-    "webpack-cli": "^2.0.10"
+    "vue-server-renderer": "^2.5.13"
+  },
+  "scripts": {
+    "build": "./node_modules/.bin/babel src -d dist"
   }
 }
