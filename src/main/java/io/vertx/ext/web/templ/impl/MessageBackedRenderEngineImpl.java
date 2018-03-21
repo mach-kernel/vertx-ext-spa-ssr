@@ -109,8 +109,6 @@ public class MessageBackedRenderEngineImpl extends CachingTemplateEngine<String>
 
       String token = metaObject.getString("token");
       JsonObject props = metaObject.getJsonObject("props");
-      // TODO: look at hashCode() for JsonObject maybe you're doing
-      // TODO: too much work here
       String propsKey = Integer.toString(props.toString().hashCode());
       String elementKey = domComponentIdPrefix + "-" + token;
 
@@ -136,7 +134,7 @@ public class MessageBackedRenderEngineImpl extends CachingTemplateEngine<String>
         Node componentDiv = component.childNode(0);
 
         componentDiv.attr("id", elementKey);
-        componentDiv.attr("react-kind", metaObject.getString("name"));
+        componentDiv.attr(domComponentIdPrefix + "-kind", metaObject.getString("name"));
 
         String rendered = component.toString();
         if (isCachingEnabled()) cache.put(propsKey, rendered);
