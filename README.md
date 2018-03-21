@@ -78,7 +78,7 @@ var serviceConfig = {
       {
         test: /\.jsx?$/,
         loader: 'babel-loader',
-        // exclude: /node_modules/,
+        exclude: /node_modules/,
         options: {
           presets: ['es2015', 'react']
         }
@@ -166,19 +166,6 @@ Middleware provided by this package will annotate each component with an ID and 
 Let's tie it all together. `MiddlewareStackTemplateEngine` allows you to set multiple `StackableMiddleware` objects steps to run as part of rendering a template. `MessageBackedRenderEngine` sends a message to the SSR verticle made earlier with the name & props of the component that is to be rendered. `StackableMiddleware` objects return `Future` as part of their render process that are then collected before the final `outputEngine` (e.g. `HandlebarsTemplateEngine` in the example below) is invoked to produce the DOM. 
 
 ```kotlin
-package counter
-
-import io.vertx.core.AbstractVerticle
-import io.vertx.core.DeploymentOptions
-import io.vertx.ext.web.Router
-import io.vertx.ext.web.handler.StaticHandler
-import io.vertx.ext.web.handler.TemplateHandler
-import io.vertx.ext.web.templ.HandlebarsTemplateEngine
-import io.vertx.ext.web.templ.MessageBackedRenderEngine
-import io.vertx.ext.web.templ.MiddlewareStackTemplateEngine
-import io.vertx.kotlin.core.json.json
-import io.vertx.kotlin.core.json.obj
-
 class CounterEndpointVerticle: AbstractVerticle() {
     private val eb by lazy { vertx.eventBus() }
 
