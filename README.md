@@ -3,6 +3,8 @@ Render SPA components in parallel over the vert.x event bus with a template engi
 
 This is currently a work in progress; you are welcome to use this for your app but if you encounter issues please help make this library better by submitting a pull request and documenting any bugs you may find.
 
+[See an example app here](https://github.com/mach-kernel/vertx-polyglot-counter)
+
 **Support status**
 - [x] React
 - [ ] Vue
@@ -10,7 +12,7 @@ This is currently a work in progress; you are welcome to use this for your app b
 
 ### Motivations
 
-React, Vue, and similar libraries have been used to deliver smoother, tighter, and sleeker experiences on the web. This is an opinionated library that 
+React, Vue, and similar libraries have been used to deliver smoother, tighter, and sleeker experiences on the web. This is an opinionated library that provides all of the glue required to make an isomorphic app on top of vert.x, with full support for any kind of external styles or components from npm. 
 
 You want to: 
 - Build a new webapp
@@ -166,7 +168,7 @@ Middleware provided by this package will annotate each component with an ID and 
 Let's tie it all together. `MiddlewareStackTemplateEngine` allows you to set multiple `StackableMiddleware` objects steps to run as part of rendering a template. `MessageBackedRenderEngine` sends a message to the SSR verticle made earlier with the name & props of the component that is to be rendered. `StackableMiddleware` objects return `Future` as part of their render process that are then collected before the final `outputEngine` (e.g. `HandlebarsTemplateEngine` in the example below) is invoked to produce the DOM. 
 
 ```kotlin
-class CounterEndpointVerticle: AbstractVerticle() {
+class MyHTTPVerticle: AbstractVerticle() {
     private val eb by lazy { vertx.eventBus() }
 
     private val templateEngine by lazy {
@@ -192,17 +194,15 @@ class CounterEndpointVerticle: AbstractVerticle() {
 
         // App
         router.get("/").handler { req ->
-            eb.send<Any>("count-ask", "") {ask_res ->
-                val counterComponent = json {
-                    obj(
-                        "name" to "Counter",
-                        "token" to "my_counter",
-                        "props" to obj("count" to 5)
-                    )
-                }
-
-                req.put("components", listOf(counterComponent))
+            val counterComponent = json {
+                obj(
+                    "name" to "Counter",
+                    "token" to "my_counter",
+                    "props" to obj("count" to 5)
+                )
             }
+
+            req.put("components", listOf(counterComponent))
         }
 
         // Template
