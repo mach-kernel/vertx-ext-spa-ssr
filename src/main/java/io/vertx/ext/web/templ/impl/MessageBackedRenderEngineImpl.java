@@ -11,7 +11,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.templ.MessageBackedRenderEngine;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.parser.Parser;
@@ -19,25 +18,41 @@ import org.jsoup.parser.Parser;
 import java.util.AbstractList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentNavigableMap;
 
 /**
- * MBRE implementation
+ * "Render" SPA components by messaging Nashorn verticles responsible
+ * for doing server-side rendering.
  *
  * @author David Stancu
  */
 public class MessageBackedRenderEngineImpl extends CachingTemplateEngine<String> implements MessageBackedRenderEngine {
-  private final Vertx vertx;
   private final EventBus eventBus;
-  private String rendererAddress;
 
-  private String componentContextKey = COMPONENT_CONTEXT_KEY;
+  private String rendererAddress = DEFAULT_RENDERER_ADDRESS;
+  private String domComponentIdPrefix = DEFAULT_DOM_COMPONENT_ID_PREFIX;
+  private String componentContextKey = DEFAULT_COMPONENT_CONTEXT_KEY;
+  private String ssrStateName = DEFAULT_SSR_STATE_NAME;
 
   public MessageBackedRenderEngineImpl(Vertx vertx) {
     super(".nop", DEFAULT_CACHE_SIZE);
-    this.vertx = vertx;
     this.eventBus = vertx.eventBus();
+  }
+
+  @Override
+  public MessageBackedRenderEngine setSsrStateName(String ssrStateName) {
+    this.ssrStateName = ssrStateName;
+    return this;
+  }
+
+  /**
+   * The component hydration stub relies on this key to associate initial state of a component
+   * to its server-side rendered DOM.
+   * @param domComponentIdPrefix
+   * @return
+   */
+  public MessageBackedRenderEngine setDomComponentIdPrefix(String domComponentIdPrefix) {
+    this.domComponentIdPrefix = domComponentIdPrefix;
+    return this;
   }
 
   /**
@@ -51,7 +66,7 @@ public class MessageBackedRenderEngineImpl extends CachingTemplateEngine<String>
   }
 
   /**
-   * Specify the key within RoutingContext that stores all of the components
+   * Specify the key within RoutingContext that stores all of the components.
    * @param componentContextKey The key
    * @return
    */
@@ -82,12 +97,12 @@ public class MessageBackedRenderEngineImpl extends CachingTemplateEngine<String>
   public void render(RoutingContext context, String _tDir, String _tFileName, Handler<AsyncResult<Buffer>> handler) {
     Object components = context.data().get(this.componentContextKey);
     if (!(components instanceof AbstractList)) return;
-    List<Object> componentList = (AbstractList) components;
 
+    List<Object> componentList = (AbstractList) components;
     ConcurrentHashMap<String, JsonObject> initialState = new ConcurrentHashMap<>();
 
-    // TODO: There has to be a more elegant way to do this, maybe
-    // TODO: filtering to expected shape is cheaper?
+    // TODO: Is this still true?
+    // https://groups.google.com/forum/#!topic/vertx/3qJS_nK-J6M
     componentList.parallelStream().parallel().forEach(meta -> {
       if (!(meta instanceof JsonObject)) return;
       JsonObject metaObject = (JsonObject) meta;
@@ -97,8 +112,9 @@ public class MessageBackedRenderEngineImpl extends CachingTemplateEngine<String>
       // TODO: look at hashCode() for JsonObject maybe you're doing
       // TODO: too much work here
       String propsKey = Integer.toString(props.toString().hashCode());
+      String elementKey = domComponentIdPrefix + "-" + token;
 
-      initialState.put("cmpnt-" + token, props);
+      initialState.put(elementKey, props);
 
       if (isCachingEnabled()) {
         String alreadyRendered = cache.get(propsKey);
@@ -119,7 +135,7 @@ public class MessageBackedRenderEngineImpl extends CachingTemplateEngine<String>
         Element component = Jsoup.parse(response.result().body().toString(), "", Parser.xmlParser());
         Node componentDiv = component.childNode(0);
 
-        componentDiv.attr("id", "cmpnt-" + token);
+        componentDiv.attr("id", elementKey);
         componentDiv.attr("react-kind", metaObject.getString("name"));
 
         String rendered = component.toString();
@@ -128,7 +144,7 @@ public class MessageBackedRenderEngineImpl extends CachingTemplateEngine<String>
       });
     });
 
-    context.put("_ssrState", Json.encode(initialState));
+    context.put(ssrStateName, Json.encode(initialState));
   }
 
   public void render(RoutingContext context, Handler<AsyncResult<Buffer>> handler) {

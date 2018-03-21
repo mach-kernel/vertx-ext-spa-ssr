@@ -15,13 +15,18 @@ import io.vertx.ext.web.templ.impl.MessageBackedRenderEngineImpl;
  * @author David Stancu
  */
 public interface MessageBackedRenderEngine extends TemplateEngine {
-  String COMPONENT_CONTEXT_KEY = "components";
-  int DEFAULT_CACHE_SIZE = 1000;
+  String DEFAULT_COMPONENT_CONTEXT_KEY = "components";
+  int DEFAULT_CACHE_SIZE = 10000;
+  String DEFAULT_DOM_COMPONENT_ID_PREFIX = "cmpnt";
+  String DEFAULT_RENDERER_ADDRESS = "vertx.ext.spa.ssr";
+  String DEFAULT_SSR_STATE_NAME = "_ssrState";
 
   static MessageBackedRenderEngine create(Vertx vertx) {
     return new MessageBackedRenderEngineImpl(vertx);
   }
 
+  MessageBackedRenderEngine setSsrStateName(String ssrStateName);
+  MessageBackedRenderEngine setDomComponentIdPrefix(String domComponentIdPrefix);
   MessageBackedRenderEngine setRendererAddress(String rendererAddress);
   MessageBackedRenderEngine setComponentContextKey(String componentContextKey);
   MessageBackedRenderEngine setMaxCacheSize(int max);
