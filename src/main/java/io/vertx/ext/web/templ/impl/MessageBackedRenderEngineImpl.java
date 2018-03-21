@@ -1,10 +1,9 @@
 package io.vertx.ext.web.templ.impl;
 
-import io.vertx.core.AsyncResult;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
@@ -25,16 +24,22 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author David Stancu
  */
-public class MessageBackedRenderEngineImpl extends CachingTemplateEngine<String> implements MessageBackedRenderEngine {
+public class MessageBackedRenderEngineImpl implements MessageBackedRenderEngine {
   private final EventBus eventBus;
+
+  private final Cache<String, String> cache =
+      Caffeine.newBuilder()
+          .maximumSize(DEFAULT_CACHE_SIZE)
+          .build();
+
 
   private String rendererAddress = DEFAULT_RENDERER_ADDRESS;
   private String domComponentIdPrefix = DEFAULT_DOM_COMPONENT_ID_PREFIX;
   private String componentContextKey = DEFAULT_COMPONENT_CONTEXT_KEY;
   private String ssrStateName = DEFAULT_SSR_STATE_NAME;
+  private Boolean cacheEnabled = CACHE_ENABLED;
 
   public MessageBackedRenderEngineImpl(Vertx vertx) {
-    super(".nop", DEFAULT_CACHE_SIZE);
     this.eventBus = vertx.eventBus();
   }
 
@@ -76,30 +81,29 @@ public class MessageBackedRenderEngineImpl extends CachingTemplateEngine<String>
   }
 
   /**
-   * Change size of LRU cache from CachingTemplateEngine<T>
+   * Toggle cache
    *
-   * @param max Max size
+   * @param enabled
    * @return
    */
-  public MessageBackedRenderEngine setMaxCacheSize(int max) {
-    this.cache.setMaxSize(max);
+  public MessageBackedRenderEngine setCacheEnabled(boolean enabled) {
+    this.cacheEnabled = enabled;
     return this;
   }
 
   /**
    * Render components by publishing messages to SSR services.
    * @param context Routing context object
-   * @param _tDir (Unused)
-   * @param _tFileName
-   * @param handler
    */
   @SuppressWarnings("unchecked")
-  public void render(RoutingContext context, String _tDir, String _tFileName, Handler<AsyncResult<Buffer>> handler) {
+  public Future render(RoutingContext context) {
     Object components = context.data().get(this.componentContextKey);
-    if (!(components instanceof AbstractList)) return;
+    if (!(components instanceof AbstractList)) return Future.failedFuture("components must be an AbstractList");
 
     List<Object> componentList = (AbstractList) components;
     ConcurrentHashMap<String, JsonObject> initialState = new ConcurrentHashMap<>();
+
+    Future renderJob = Future.future();
 
     // TODO: Is this still true?
     // https://groups.google.com/forum/#!topic/vertx/3qJS_nK-J6M
@@ -114,38 +118,39 @@ public class MessageBackedRenderEngineImpl extends CachingTemplateEngine<String>
 
       initialState.put(elementKey, props);
 
-      if (isCachingEnabled()) {
-        String alreadyRendered = cache.get(propsKey);
+      if (this.cacheEnabled) {
+        String alreadyRendered = cache.getIfPresent(propsKey);
         if (alreadyRendered != null) {
           context.put(token, alreadyRendered);
+          renderJob.complete();
           return;
         }
       }
 
-      eventBus.send(this.rendererAddress, meta, response -> {
-        if (response.failed()) {
+      eventBus.send(this.rendererAddress, meta, ssr_response -> {
+        if (ssr_response.failed()) {
           context.put(token, "");
-          handler.handle(Future.failedFuture(response.cause()));
+          renderJob.fail(ssr_response.cause());
           return;
         }
 
         // To aid hydration
-        Element component = Jsoup.parse(response.result().body().toString(), "", Parser.xmlParser());
+        Element component = Jsoup.parse(ssr_response.result().body().toString(), "", Parser.xmlParser());
         Node componentDiv = component.childNode(0);
 
         componentDiv.attr("id", elementKey);
         componentDiv.attr(domComponentIdPrefix + "-kind", metaObject.getString("name"));
 
         String rendered = component.toString();
-        if (isCachingEnabled()) cache.put(propsKey, rendered);
+        if (this.cacheEnabled) cache.put(propsKey, rendered);
         context.put(token, rendered);
+
+        renderJob.complete();
       });
     });
 
     context.put(ssrStateName, Json.encode(initialState));
-  }
 
-  public void render(RoutingContext context, Handler<AsyncResult<Buffer>> handler) {
-    render(context, null, null, handler);
+    return renderJob;
   }
 }

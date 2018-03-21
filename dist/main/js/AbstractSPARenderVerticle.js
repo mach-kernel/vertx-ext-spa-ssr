@@ -18,7 +18,7 @@ var AbstractSPARenderVerticle = exports.AbstractSPARenderVerticle = function () 
    * @param consumerAddress
    */
   function AbstractSPARenderVerticle(componentMap) {
-    var consumerAddress = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "vertx.spa.render";
+    var consumerAddress = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "vertx.ext.spa.ssr";
 
     _classCallCheck(this, AbstractSPARenderVerticle);
 

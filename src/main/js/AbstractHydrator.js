@@ -1,6 +1,3 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-
 export class AbstractHydrator {
   /**
    * Create a client-side hydration stub
@@ -10,20 +7,29 @@ export class AbstractHydrator {
    */
   constructor(componentMap, settings = {}) {
     this.componentMap = componentMap;
+
+    this.settings = {
+      domComponentIdPrefix: 'cmpnt',
+      ssrStateName: '_ssrState'
+    };
+
+    Object.assign(this.settings, {
+      querySelector: `div[id^=${this.settings.domComponentIdPrefix}-`,
+      componentKind: `${this.settings.domComponentIdPrefix}-kind`
+    });
+
+    Object.assign(this.settings, settings);
+
     this.hydrate();
   }
 
-  settings = {
-    domComponentIdPrefix: 'cmpnt',
-    querySelector: `div[id^=${this.settings.domComponentIdPrefix}-`,
-    componentKind: `${this.settings.domComponentIdPrefix}-kind`
-  };
+
 
   hydrate() {
     document.querySelectorAll(this.settings.querySelector).forEach((element) => {
       let component = this.componentMap[element.getAttribute(this.settings.componentKind)];
 
-      attachToComponent(component, element);
+      this.attachToComponent(component, element);
     });
   }
 
