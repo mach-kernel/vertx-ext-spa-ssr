@@ -19,7 +19,9 @@ dependencies {
     compile "io.vertx:vertx-dependencies:${vertxVersion}"
     compile "io.vertx:vertx-core:${vertxVersion}"
     compile "io.vertx:vertx-web:${vertxVersion}"
+
     compile 'org.jsoup:jsoup:1.11.2'
+    compile 'com.github.ben-manes.caffeine:caffeine:2.6.2'
 }
 
 jar {

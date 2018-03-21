@@ -7,7 +7,7 @@ export class AbstractSPARenderVerticle {
    * @param componentMap
    * @param consumerAddress
    */
-  constructor(componentMap, consumerAddress = "vertx.spa.render") {
+  constructor(componentMap, consumerAddress = "vertx.ext.spa.ssr") {
     this.componentMap = componentMap;
     vertx.eventBus().consumer(
       consumerAddress,
