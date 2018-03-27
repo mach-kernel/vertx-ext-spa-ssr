@@ -1,7 +1,10 @@
 package io.vertx.ext.web.templ;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.templ.impl.MessageBackedRenderEngineImpl;
+
+import java.util.function.Function;
 
 /**
  * Render components from a context object as backed by rendering services
@@ -15,6 +18,9 @@ public interface MessageBackedRenderEngine extends StackableMiddleware {
   String DEFAULT_RENDERER_ADDRESS = "vertx.ext.spa.ssr";
   String DEFAULT_SSR_STATE_NAME = "_ssrState";
 
+  Function<JsonObject, String> DEFAULT_HASH_FUNCTION =
+        j -> Integer.toString(j.toString().hashCode());
+
   int DEFAULT_CACHE_SIZE = 10000;
   Boolean CACHE_ENABLED = true;
 
@@ -27,4 +33,5 @@ public interface MessageBackedRenderEngine extends StackableMiddleware {
   MessageBackedRenderEngine setRendererAddress(String rendererAddress);
   MessageBackedRenderEngine setComponentContextKey(String componentContextKey);
   MessageBackedRenderEngine setCacheEnabled(boolean enabled);
+  MessageBackedRenderEngine setHashFunction(Function<JsonObject, String> lambda);
 }

@@ -17,6 +17,7 @@ import org.jsoup.parser.Parser;
 import java.util.AbstractList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 /**
  * "Render" SPA components by messaging Nashorn verticles responsible
@@ -38,12 +39,28 @@ public class MessageBackedRenderEngineImpl implements MessageBackedRenderEngine 
   private String componentContextKey = DEFAULT_COMPONENT_CONTEXT_KEY;
   private String ssrStateName = DEFAULT_SSR_STATE_NAME;
   private Boolean cacheEnabled = CACHE_ENABLED;
+  private Function<JsonObject, String> hashFunction = DEFAULT_HASH_FUNCTION;
 
   public MessageBackedRenderEngineImpl(Vertx vertx) {
     this.eventBus = vertx.eventBus();
   }
 
-  @Override
+  /**
+   * Override the default component prop hashing behavior with your own
+   * function.
+   * @param lambda
+   * @return
+   */
+  public MessageBackedRenderEngine setHashFunction(Function<JsonObject, String> lambda) {
+    this.hashFunction = lambda;
+    return this;
+  }
+
+  /**
+   * Set the name of the window object used to hydrate react components on page.
+   * @param ssrStateName
+   * @return
+   */
   public MessageBackedRenderEngine setSsrStateName(String ssrStateName) {
     this.ssrStateName = ssrStateName;
     return this;
@@ -113,16 +130,16 @@ public class MessageBackedRenderEngineImpl implements MessageBackedRenderEngine 
 
       String token = metaObject.getString("token");
       JsonObject props = metaObject.getJsonObject("props");
-      String propsKey = Integer.toString(props.toString().hashCode());
+      String propsKey = this.hashFunction.apply(props);
       String elementKey = domComponentIdPrefix + "-" + token;
 
       initialState.put(elementKey, props);
 
       if (this.cacheEnabled) {
         String alreadyRendered = cache.getIfPresent(propsKey);
+
         if (alreadyRendered != null) {
           context.put(token, alreadyRendered);
-          renderJob.complete();
           return;
         }
       }
@@ -144,12 +161,11 @@ public class MessageBackedRenderEngineImpl implements MessageBackedRenderEngine 
         String rendered = component.toString();
         if (this.cacheEnabled) cache.put(propsKey, rendered);
         context.put(token, rendered);
-
-        renderJob.complete();
       });
     });
 
     context.put(ssrStateName, Json.encode(initialState));
+    renderJob.complete();
 
     return renderJob;
   }
