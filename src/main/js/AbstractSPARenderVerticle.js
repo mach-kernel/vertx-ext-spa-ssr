@@ -1,4 +1,4 @@
-import { ComponentMap } from './ComponentMap';
+import ComponentMap from './ComponentMap';
 
 /**
  * Thin "interface" for SPA render support.

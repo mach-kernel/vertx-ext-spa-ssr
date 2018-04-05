@@ -1,4 +1,4 @@
-import { ComponentMap } from './ComponentMap'
+import ComponentMap from './ComponentMap'
 
 export class AbstractHydrator {
   /**
@@ -31,7 +31,7 @@ export class AbstractHydrator {
   hydrate() {
     document.querySelectorAll(this.settings.querySelector).forEach((element) => {
       let kind = element.getAttribute(this.settings.componentKind);
-      let component = this.componentMap.resolveComponent(name);
+      let component = this.componentMap.resolveComponent(kind);
 
       this.attachToComponent(component, element);
     });
