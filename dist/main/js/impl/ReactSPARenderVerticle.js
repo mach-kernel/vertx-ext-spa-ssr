@@ -54,8 +54,8 @@ var ReactSPARenderVerticle = exports.ReactSPARenderVerticle = function (_Abstrac
 
       if ((typeof props === 'undefined' ? 'undefined' : _typeof(props)) !== 'object') return message.fail(2, 'Props must be object!');
 
-      var resolved = this.componentMap[name];
-      if (typeof resolved === 'undefined') return message.fail(3, 'Component not found!');
+      var resolved = this.componentMap.resolveComponent(name);
+      if (!resolved) return message.fail(3, 'Component not found!');
 
       var element = _react2.default.createElement(resolved, props);
       message.reply(_server2.default.renderToString(element));

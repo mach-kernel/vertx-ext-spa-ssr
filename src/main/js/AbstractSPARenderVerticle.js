@@ -1,3 +1,5 @@
+import ComponentMap from './ComponentMap';
+
 /**
  * Thin "interface" for SPA render support.
  */
@@ -8,7 +10,7 @@ export class AbstractSPARenderVerticle {
    * @param consumerAddress
    */
   constructor(componentMap, consumerAddress = "vertx.ext.spa.ssr") {
-    this.componentMap = componentMap;
+    this.componentMap = new ComponentMap(componentMap);
     vertx.eventBus().consumer(
       consumerAddress,
       this.onRenderRequest.bind(this)
