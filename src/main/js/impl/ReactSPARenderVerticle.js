@@ -17,9 +17,8 @@ export class ReactSPARenderVerticle extends AbstractSPARenderVerticle {
     if (typeof props !== 'object')
       return message.fail(2, 'Props must be object!');
 
-    let resolved = this.componentMap[name];
-    if (typeof resolved === 'undefined')
-      return message.fail(3, 'Component not found!');
+    let resolved = this.componentMap.resolveComponent(name);
+    if (!resolved) return message.fail(3, 'Component not found!');
 
     let element = React.createElement(resolved, props);
     message.reply(ReactDOMServer.renderToString(element));

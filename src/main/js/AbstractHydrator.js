@@ -1,3 +1,5 @@
+import { ComponentMap } from './ComponentMap'
+
 export class AbstractHydrator {
   /**
    * Create a client-side hydration stub
@@ -6,7 +8,7 @@ export class AbstractHydrator {
    * @param settings
    */
   constructor(componentMap, settings = {}) {
-    this.componentMap = componentMap;
+    this.componentMap = new ComponentMap(componentMap);
 
     this.settings = {
       domComponentIdPrefix: 'cmpnt',
@@ -23,11 +25,13 @@ export class AbstractHydrator {
     this.hydrate();
   }
 
-
-
+  /**
+   * Hydrate components on page
+   */
   hydrate() {
     document.querySelectorAll(this.settings.querySelector).forEach((element) => {
-      let component = this.componentMap[element.getAttribute(this.settings.componentKind)];
+      let kind = element.getAttribute(this.settings.componentKind);
+      let component = this.componentMap.resolveComponent(name);
 
       this.attachToComponent(component, element);
     });
