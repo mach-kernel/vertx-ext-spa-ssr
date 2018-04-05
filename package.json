@@ -13,8 +13,10 @@
     "babel-preset-es2015": "^6.24.1",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
+    "react-universal-component": "^2.8.4",
     "vue": "^2.5.13",
-    "vue-server-renderer": "^2.5.13"
+    "vue-server-renderer": "^2.5.13",
+    "webpack-flush-chunks": "^1.2.3"
   },
   "scripts": {
     "build": "./node_modules/.bin/babel src -d dist"

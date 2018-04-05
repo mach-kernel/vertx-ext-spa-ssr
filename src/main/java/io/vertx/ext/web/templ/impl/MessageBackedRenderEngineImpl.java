@@ -135,7 +135,7 @@ public class MessageBackedRenderEngineImpl implements MessageBackedRenderEngine 
 
       initialState.put(elementKey, props);
 
-      if (this.cacheEnabled) {
+      if (this.cacheEnabled || props != null) {
         String alreadyRendered = cache.getIfPresent(propsKey);
 
         if (alreadyRendered != null) {
@@ -151,8 +151,15 @@ public class MessageBackedRenderEngineImpl implements MessageBackedRenderEngine 
           return;
         }
 
+        System.out.println("SSR REPLY RECVD");
+        System.out.println(ssr_response.result().body().toString());
+
+        JsonObject reply = new JsonObject(
+          ssr_response.result().body().toString()
+        );
+        
         // To aid hydration
-        Element component = Jsoup.parse(ssr_response.result().body().toString(), "", Parser.xmlParser());
+        Element component = Jsoup.parse(reply.getString("rendered"), "", Parser.xmlParser());
         Node componentDiv = component.childNode(0);
 
         componentDiv.attr("id", elementKey);
