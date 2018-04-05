@@ -12,7 +12,7 @@ export class AbstractHydrator {
 
     this.settings = {
       domComponentIdPrefix: 'cmpnt',
-      ssrStateName: '_ssrState'
+      ssrStateName: '_ssrState',
     };
 
     Object.assign(this.settings, {
