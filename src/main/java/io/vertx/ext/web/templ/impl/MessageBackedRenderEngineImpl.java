@@ -108,6 +108,16 @@ public class MessageBackedRenderEngineImpl implements MessageBackedRenderEngine 
     return this;
   }
 
+  private String processRenderedComponent(String rendered, String elementKey, String name) {
+    Element component = Jsoup.parse(rendered, "", Parser.xmlParser());
+    Node componentDiv = component.childNode(0);
+
+    componentDiv.attr("id", elementKey);
+    componentDiv.attr(domComponentIdPrefix + "-kind", name);
+
+    return component.toString();
+  }
+
   /**
    * Render components by publishing messages to SSR services.
    * @param context Routing context object
@@ -129,13 +139,14 @@ public class MessageBackedRenderEngineImpl implements MessageBackedRenderEngine 
       JsonObject metaObject = (JsonObject) meta;
 
       String token = metaObject.getString("token");
-      JsonObject props = metaObject.getJsonObject("props");
+      JsonObject props = metaObject.getJsonObject("props", null);
       String propsKey = this.hashFunction.apply(props);
       String elementKey = domComponentIdPrefix + "-" + token;
 
       initialState.put(elementKey, props);
 
-      if (this.cacheEnabled) {
+      // Every time props is null we treat it as a cache miss
+      if (this.cacheEnabled && props != null) {
         String alreadyRendered = cache.getIfPresent(propsKey);
 
         if (alreadyRendered != null) {
@@ -151,17 +162,16 @@ public class MessageBackedRenderEngineImpl implements MessageBackedRenderEngine 
           return;
         }
 
-        // To aid hydration
-        Element component = Jsoup.parse(ssr_response.result().body().toString(), "", Parser.xmlParser());
-        Node componentDiv = component.childNode(0);
+        String processed = processRenderedComponent(
+          ssr_response.result().body().toString(),
+          elementKey,
+          metaObject.getString("name")
+        );
 
-        componentDiv.attr("id", elementKey);
-        componentDiv.attr(domComponentIdPrefix + "-kind", metaObject.getString("name"));
-
-        String rendered = component.toString();
-        if (this.cacheEnabled) cache.put(propsKey, rendered);
-        context.put(token, rendered);
+        if (this.cacheEnabled) cache.put(propsKey, processed);
+        context.put(token, processed);
       });
+
     });
 
     context.put(ssrStateName, Json.encode(initialState));
