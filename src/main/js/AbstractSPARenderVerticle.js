@@ -11,9 +11,14 @@ export class AbstractSPARenderVerticle {
    */
   constructor(componentMap, consumerAddress = "vertx.ext.spa.ssr") {
     this.componentMap = new ComponentMap(componentMap);
+
     vertx.eventBus().consumer(
       consumerAddress,
       this.onRenderRequest.bind(this)
+    );
+    vertx.eventBus().consumer(
+      "vertx.ext.spa.get_components",
+      this.onComponentMapRequest.bind(this)
     );
 
     this.vertxLogger = Java.type("io.vertx.core.logging.LoggerFactory")
@@ -33,6 +38,15 @@ export class AbstractSPARenderVerticle {
       return message.fail(1, 'Message name missing!');
 
     this.renderComponent(message);
+  }
+
+  /**
+   * Ask the SSR service for what components can be
+   * rendered
+   * @param message
+   */
+  onComponentMapRequest(message) {
+    message.reply(this.componentMap);
   }
 
   /**
