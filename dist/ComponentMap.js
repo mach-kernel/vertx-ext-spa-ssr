@@ -12,10 +12,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
  * Component map
  */
 var ComponentMap = function () {
-  function ComponentMap(componentMap) {
+  function ComponentMap(components) {
     _classCallCheck(this, ComponentMap);
 
-    this.componentMap = componentMap;
+    this.components = components;
   }
 
   /**
@@ -32,7 +32,7 @@ var ComponentMap = function () {
       name = name.split("/");
       return name.reduce(function (acc, chunk) {
         return acc[chunk];
-      }, this.componentMap);
+      }, this.components);
     }
   }]);
 

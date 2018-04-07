@@ -109,6 +109,55 @@ public class MessageBackedRenderEngineImpl implements MessageBackedRenderEngine 
   }
 
   /**
+   * Add attributes to component so that the hydration stub knows
+   * what to do.
+   * 
+   * @param rendered
+   * @param elementKey
+   * @param name
+   * @return String
+   */
+  private String decorateRenderedComponent(String rendered, String elementKey, String name) {
+    Element component = Jsoup.parse(rendered, "", Parser.xmlParser());
+    Node componentDiv = component.childNode(0);
+
+    componentDiv.attr("id", elementKey);
+    componentDiv.attr(domComponentIdPrefix + "-kind", name);
+
+    return component.toString();
+  }
+
+  /**
+   * Send a message and place SSR results into context
+   * 
+   * @param context
+   * @param metaObject
+   * @param token
+   * @param elementKey
+   * @param propsKey
+   */
+  private void decorateFromMessage(RoutingContext context, JsonObject metaObject, String token, String elementKey,
+      String propsKey) {
+    eventBus.send(this.rendererAddress, metaObject, ssr_response -> {
+      if (ssr_response.failed()) {
+        context.put(token, "");
+        return;
+      }
+
+      String processed = decorateRenderedComponent(
+        ssr_response.result().body().toString(),
+        elementKey,
+        metaObject.getString("name")
+      );
+
+      if (this.cacheEnabled && !propsKey.isEmpty())
+        cache.put(propsKey, processed);
+        
+      context.put(token, processed);
+    });
+  }
+
+  /**
    * Render components by publishing messages to SSR services.
    * @param context Routing context object
    */
@@ -129,13 +178,15 @@ public class MessageBackedRenderEngineImpl implements MessageBackedRenderEngine 
       JsonObject metaObject = (JsonObject) meta;
 
       String token = metaObject.getString("token");
-      JsonObject props = metaObject.getJsonObject("props");
-      String propsKey = this.hashFunction.apply(props);
+      JsonObject props = metaObject.getJsonObject("props", null);
+
+      String propsKey = props == null ? "" : this.hashFunction.apply(props);
       String elementKey = domComponentIdPrefix + "-" + token;
 
       initialState.put(elementKey, props);
 
-      if (this.cacheEnabled) {
+      // Every time props is null we treat it as a cache miss
+      if (this.cacheEnabled && props != null) {
         String alreadyRendered = cache.getIfPresent(propsKey);
 
         if (alreadyRendered != null) {
@@ -144,24 +195,7 @@ public class MessageBackedRenderEngineImpl implements MessageBackedRenderEngine 
         }
       }
 
-      eventBus.send(this.rendererAddress, meta, ssr_response -> {
-        if (ssr_response.failed()) {
-          context.put(token, "");
-          renderJob.fail(ssr_response.cause());
-          return;
-        }
-
-        // To aid hydration
-        Element component = Jsoup.parse(ssr_response.result().body().toString(), "", Parser.xmlParser());
-        Node componentDiv = component.childNode(0);
-
-        componentDiv.attr("id", elementKey);
-        componentDiv.attr(domComponentIdPrefix + "-kind", metaObject.getString("name"));
-
-        String rendered = component.toString();
-        if (this.cacheEnabled) cache.put(propsKey, rendered);
-        context.put(token, rendered);
-      });
+      decorateFromMessage(context, metaObject, token, elementKey, propsKey);
     });
 
     context.put(ssrStateName, Json.encode(initialState));
