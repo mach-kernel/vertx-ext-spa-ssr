@@ -108,7 +108,16 @@ public class MessageBackedRenderEngineImpl implements MessageBackedRenderEngine 
     return this;
   }
 
-  private String processRenderedComponent(String rendered, String elementKey, String name) {
+  /**
+   * Add attributes to component so that the hydration stub knows
+   * what to do.
+   * 
+   * @param rendered
+   * @param elementKey
+   * @param name
+   * @return String
+   */
+  private String decorateRenderedComponent(String rendered, String elementKey, String name) {
     Element component = Jsoup.parse(rendered, "", Parser.xmlParser());
     Node componentDiv = component.childNode(0);
 
@@ -140,8 +149,9 @@ public class MessageBackedRenderEngineImpl implements MessageBackedRenderEngine 
 
       String token = metaObject.getString("token");
       JsonObject props = metaObject.getJsonObject("props", null);
-      String propsKey = this.hashFunction.apply(props);
-      String elementKey = domComponentIdPrefix + "-" + token;
+
+      String propsKey = props == null ? "" : this.hashFunction.apply(props);
+      String elementKey = props == null ? "" : domComponentIdPrefix + "-" + token;
 
       initialState.put(elementKey, props);
 
@@ -158,11 +168,10 @@ public class MessageBackedRenderEngineImpl implements MessageBackedRenderEngine 
       eventBus.send(this.rendererAddress, meta, ssr_response -> {
         if (ssr_response.failed()) {
           context.put(token, "");
-          renderJob.fail(ssr_response.cause());
           return;
         }
 
-        String processed = processRenderedComponent(
+        String processed = decorateRenderedComponent(
           ssr_response.result().body().toString(),
           elementKey,
           metaObject.getString("name")
