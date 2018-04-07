@@ -2,8 +2,8 @@
  * Component map
  */
 export default class ComponentMap {
-  constructor(componentMap) {
-    this.componentMap = componentMap;
+  constructor(components) {
+    this.components = components;
   }
 
   /**
@@ -14,6 +14,6 @@ export default class ComponentMap {
   resolveComponent(name) {
     if (typeof name !== "string") return false;
     name = name.split("/");
-    return name.reduce((acc, chunk) => (acc[chunk]), this.componentMap);
+    return name.reduce((acc, chunk) => (acc[chunk]), this.components);
   }
 }

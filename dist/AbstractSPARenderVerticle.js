@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -7,7 +7,7 @@ exports.AbstractSPARenderVerticle = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _ComponentMap = require("./ComponentMap");
+var _ComponentMap = require('./ComponentMap');
 
 var _ComponentMap2 = _interopRequireDefault(_ComponentMap);
 
@@ -24,13 +24,27 @@ var AbstractSPARenderVerticle = exports.AbstractSPARenderVerticle = function () 
    * @param componentMap
    * @param consumerAddress
    */
+  // constructor(componentMap, consumerAddress = "vertx.ext.spa.ssr"
   function AbstractSPARenderVerticle(componentMap) {
-    var consumerAddress = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "vertx.ext.spa.ssr";
+    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
+      baseAddress: 'vertx.ext.spa',
+      ssrAddress: 'ssr',
+      getComponentsAddress: 'get_components'
+    };
 
     _classCallCheck(this, AbstractSPARenderVerticle);
 
+    this.settings = settings;
     this.componentMap = new _ComponentMap2.default(componentMap);
-    vertx.eventBus().consumer(consumerAddress, this.onRenderRequest.bind(this));
+
+    var _settings = this.settings,
+        baseAddress = _settings.baseAddress,
+        ssrAddress = _settings.ssrAddress,
+        getComponentsAddress = _settings.getComponentsAddress;
+
+
+    vertx.eventBus().consumer(baseAddress + '.' + ssrAddress, this.onRenderRequest.bind(this));
+    vertx.eventBus().consumer(baseAddress + '.' + getComponentsAddress, this.onComponentMapRequest.bind(this));
 
     this.vertxLogger = Java.type("io.vertx.core.logging.LoggerFactory").getLogger("vertx-ext-spa-ssr");
 
@@ -44,7 +58,7 @@ var AbstractSPARenderVerticle = exports.AbstractSPARenderVerticle = function () 
 
 
   _createClass(AbstractSPARenderVerticle, [{
-    key: "onRenderRequest",
+    key: 'onRenderRequest',
     value: function onRenderRequest(message) {
       var _message$body = message.body(),
           name = _message$body.name;
@@ -55,12 +69,51 @@ var AbstractSPARenderVerticle = exports.AbstractSPARenderVerticle = function () 
     }
 
     /**
+     * Recursively sweeps component map to find all leaves.
+     * @param object 
+     * @param parentName 
+     * @param found 
+     */
+
+  }, {
+    key: 'buildModuleList',
+    value: function buildModuleList(object) {
+      var _this = this;
+
+      var parentName = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+      var found = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
+
+      return Object.keys(object).reduce(function (acc, cur) {
+        if (typeof object[cur] === "undefined") return acc;
+
+        if (Object.keys(object[cur]).length > 0) {
+          return _this.buildModuleList(object[cur], parentName === '' ? cur : parentName + '/' + cur, acc);
+        }
+
+        acc.push(parentName + '/' + cur);
+        return acc;
+      }, found);
+    }
+
+    /**
+     * Ask the SSR service for what components can be
+     * rendered
+     * @param message
+     */
+
+  }, {
+    key: 'onComponentMapRequest',
+    value: function onComponentMapRequest(message) {
+      message.reply(this.buildModuleList(this.componentMap.components));
+    }
+
+    /**
      * Implement in subclasses for your SPA framework.
      * @param message
      */
 
   }, {
-    key: "renderComponent",
+    key: 'renderComponent',
     value: function renderComponent(message) {
       throw new TypeError("Children must implement renderComponent()");
     }
