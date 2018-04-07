@@ -128,6 +128,36 @@ public class MessageBackedRenderEngineImpl implements MessageBackedRenderEngine 
   }
 
   /**
+   * Send a message and place SSR results into context
+   * 
+   * @param context
+   * @param metaObject
+   * @param token
+   * @param elementKey
+   * @param propsKey
+   */
+  private void decorateFromMessage(RoutingContext context, JsonObject metaObject, String token, String elementKey,
+      String propsKey) {
+    eventBus.send(this.rendererAddress, metaObject, ssr_response -> {
+      if (ssr_response.failed()) {
+        context.put(token, "");
+        return;
+      }
+
+      String processed = decorateRenderedComponent(
+        ssr_response.result().body().toString(),
+        elementKey,
+        metaObject.getString("name")
+      );
+
+      if (this.cacheEnabled && !propsKey.isEmpty())
+        cache.put(propsKey, processed);
+        
+      context.put(token, processed);
+    });
+  }
+
+  /**
    * Render components by publishing messages to SSR services.
    * @param context Routing context object
    */
@@ -151,7 +181,7 @@ public class MessageBackedRenderEngineImpl implements MessageBackedRenderEngine 
       JsonObject props = metaObject.getJsonObject("props", null);
 
       String propsKey = props == null ? "" : this.hashFunction.apply(props);
-      String elementKey = props == null ? "" : domComponentIdPrefix + "-" + token;
+      String elementKey = domComponentIdPrefix + "-" + token;
 
       initialState.put(elementKey, props);
 
@@ -165,22 +195,7 @@ public class MessageBackedRenderEngineImpl implements MessageBackedRenderEngine 
         }
       }
 
-      eventBus.send(this.rendererAddress, meta, ssr_response -> {
-        if (ssr_response.failed()) {
-          context.put(token, "");
-          return;
-        }
-
-        String processed = decorateRenderedComponent(
-          ssr_response.result().body().toString(),
-          elementKey,
-          metaObject.getString("name")
-        );
-
-        if (this.cacheEnabled) cache.put(propsKey, processed);
-        context.put(token, processed);
-      });
-
+      decorateFromMessage(context, metaObject, token, elementKey, propsKey);
     });
 
     context.put(ssrStateName, Json.encode(initialState));
