@@ -78,7 +78,7 @@ export class AbstractSPARenderVerticle {
    */
   onComponentMapRequest(message) {
     message.reply(
-      this.buildModuleList(this.componentMap)
+      this.buildModuleList(this.componentMap.componentMap)
     );
   }
 
