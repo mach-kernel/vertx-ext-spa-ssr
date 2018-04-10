@@ -9,13 +9,13 @@ export class AbstractSPARenderVerticle {
    * @param componentMap
    * @param consumerAddress
    */
-  // constructor(componentMap, consumerAddress = "vertx.ext.spa.ssr"
-  constructor(componentMap, settings = {
-    baseAddress: 'vertx.ext.spa',
-    ssrAddress: 'ssr',
-    getComponentsAddress: 'get_components'
-  }) {
-    this.settings = settings;
+  constructor(componentMap, settings = {}) {
+    this.settings = Object.assign({
+      baseAddress: 'vertx.ext.spa',
+      ssrAddress: 'ssr',
+      getComponentsAddress: 'get_components'
+    }, settings);
+
     this.componentMap = new ComponentMap(componentMap);
 
     const { baseAddress, ssrAddress, getComponentsAddress } = this.settings;

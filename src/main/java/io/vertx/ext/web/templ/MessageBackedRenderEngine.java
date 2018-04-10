@@ -3,6 +3,7 @@ package io.vertx.ext.web.templ;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.templ.impl.MessageBackedRenderEngineImpl;
+import io.vertx.ext.web.templ.impl.ReactLoadableRenderEngine;
 
 import java.util.function.Function;
 
@@ -24,8 +25,19 @@ public interface MessageBackedRenderEngine extends StackableMiddleware {
   int DEFAULT_CACHE_SIZE = 10000;
   Boolean CACHE_ENABLED = true;
 
+  /**
+   * Create a standard MBRE that returns a string
+   */
   static MessageBackedRenderEngine create(Vertx vertx) {
     return new MessageBackedRenderEngineImpl(vertx);
+  }
+
+  /**
+   * Create a React Loadable MBRE that places scripts into 
+   * your RoutingContext
+   */
+  static MessageBackedRenderEngine createReactLoadable(Vertx vertx) {
+    return new ReactLoadableRenderEngine(vertx);
   }
 
   MessageBackedRenderEngine setSsrStateName(String ssrStateName);
