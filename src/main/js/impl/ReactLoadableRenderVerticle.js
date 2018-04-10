@@ -19,9 +19,6 @@ export class ReactLoadableRenderVerticle extends AbstractSPARenderVerticle {
    * @param props Component props
    */
   renderComponent(message) {
-    console.log("RECV REQUEST");
-    console.log(message);
-
     let { name, props } = message.body();
     if (typeof props !== 'object')
       return message.fail(2, 'Props must be object!');

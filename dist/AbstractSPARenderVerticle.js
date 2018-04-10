@@ -24,17 +24,17 @@ var AbstractSPARenderVerticle = exports.AbstractSPARenderVerticle = function () 
    * @param componentMap
    * @param consumerAddress
    */
-  // constructor(componentMap, consumerAddress = "vertx.ext.spa.ssr"
   function AbstractSPARenderVerticle(componentMap) {
-    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
-      baseAddress: 'vertx.ext.spa',
-      ssrAddress: 'ssr',
-      getComponentsAddress: 'get_components'
-    };
+    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
     _classCallCheck(this, AbstractSPARenderVerticle);
 
-    this.settings = settings;
+    this.settings = Object.assign({
+      baseAddress: 'vertx.ext.spa',
+      ssrAddress: 'ssr',
+      getComponentsAddress: 'get_components'
+    }, settings);
+
     this.componentMap = new _ComponentMap2.default(componentMap);
 
     var _settings = this.settings,
