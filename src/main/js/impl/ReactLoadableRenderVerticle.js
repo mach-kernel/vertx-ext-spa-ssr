@@ -26,9 +26,10 @@ export class ReactLoadableRenderVerticle extends AbstractSPARenderVerticle {
     if (typeof props !== 'object')
       return message.fail(2, 'Props must be object!');
 
-    let relevantBundles = Object.keys(this.settings.reactLoadableStats).find(
-      (k) => k.includes(name)
-    )
+    let bundleMeta = Object.keys(this.settings.reactLoadableStats).reduce((acc, cur) => {
+      if (cur.includes(name)) acc.push(this.settings.reactLoadableStats[cur]);
+      return acc;
+    }, [])
     
     let resolved = this.componentMap.resolveComponent(name);
     if (!resolved) return message.fail(3, 'Component not found!');
@@ -36,7 +37,7 @@ export class ReactLoadableRenderVerticle extends AbstractSPARenderVerticle {
 
     message.reply({
       DOM: ReactDOMServer.renderToString(element),
-      bundleMeta: this.settings.reactLoadableStats[relevantBundles]
+      bundleMeta: bundleMeta
     });
   }
 }
