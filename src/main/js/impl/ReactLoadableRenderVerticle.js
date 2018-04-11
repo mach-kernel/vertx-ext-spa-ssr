@@ -5,10 +5,6 @@ import ReactDOMServer from 'react-dom/server';
 
 import Loadable from 'react-loadable';
 
-
-// TRY REGULAR SSR WITH THE LOADABLE ON CLIENTSIDE
-
-
 export class ReactLoadableRenderVerticle extends AbstractSPARenderVerticle {
   /**
    * Render a React component
@@ -32,8 +28,10 @@ export class ReactLoadableRenderVerticle extends AbstractSPARenderVerticle {
     if (!resolved) return message.fail(3, 'Component not found!');
     let element = React.createElement(resolved, props);
 
+    let dom = ReactDOMServer.renderToString(element);
+
     message.reply({
-      DOM: ReactDOMServer.renderToString(element),
+      DOM: this.decorateRenderedComponent(dom, name, "foo"),
       bundleMeta: bundleMeta
     });
   }

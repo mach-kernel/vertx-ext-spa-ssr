@@ -72,8 +72,10 @@ var ReactLoadableRenderVerticle = exports.ReactLoadableRenderVerticle = function
       if (!resolved) return message.fail(3, 'Component not found!');
       var element = _react2.default.createElement(resolved, props);
 
+      var dom = _server2.default.renderToString(element);
+
       message.reply({
-        DOM: _server2.default.renderToString(element),
+        DOM: this.decorateRenderedComponent(dom, name, "foo"),
         bundleMeta: bundleMeta
       });
     }
