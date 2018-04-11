@@ -6,16 +6,19 @@ import ReactDOMServer from 'react-dom/server';
 import Loadable from 'react-loadable';
 
 export class ReactLoadableRenderVerticle extends AbstractSPARenderVerticle {
+  constructor(componentMap, settings = {}) {
+    super(componentMap, settings);
+    this.settings = Object.assign({
+      decorateComponent: true
+    }, this.settings);
+  }
+
   /**
    * Render a React component
-   *
-   * TODO: Support children
-   * @param message vert.x event bus message
-   * @param name Component name
-   * @param props Component props
+   * @param message
    */
   renderComponent(message) {
-    let { name, props } = message.body();
+    let { name, props, token = "" } = message.body();
     if (typeof props !== 'object')
       return message.fail(2, 'Props must be object!');
 
@@ -29,9 +32,10 @@ export class ReactLoadableRenderVerticle extends AbstractSPARenderVerticle {
     let element = React.createElement(resolved, props);
 
     let dom = ReactDOMServer.renderToString(element);
+    if (this.settings.decorateComponent) dom = this.decorateRenderedComponent(dom, name, token);
 
     message.reply({
-      DOM: this.decorateRenderedComponent(dom, name, "foo"),
+      DOM: dom,
       bundleMeta: bundleMeta
     });
   }

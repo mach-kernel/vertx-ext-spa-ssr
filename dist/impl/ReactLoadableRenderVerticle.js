@@ -31,35 +31,38 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-// TRY REGULAR SSR WITH THE LOADABLE ON CLIENTSIDE
-
-
 var ReactLoadableRenderVerticle = exports.ReactLoadableRenderVerticle = function (_AbstractSPARenderVer) {
   _inherits(ReactLoadableRenderVerticle, _AbstractSPARenderVer);
 
-  function ReactLoadableRenderVerticle() {
+  function ReactLoadableRenderVerticle(componentMap) {
+    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
     _classCallCheck(this, ReactLoadableRenderVerticle);
 
-    return _possibleConstructorReturn(this, (ReactLoadableRenderVerticle.__proto__ || Object.getPrototypeOf(ReactLoadableRenderVerticle)).apply(this, arguments));
+    var _this = _possibleConstructorReturn(this, (ReactLoadableRenderVerticle.__proto__ || Object.getPrototypeOf(ReactLoadableRenderVerticle)).call(this, componentMap, settings));
+
+    _this.settings = Object.assign({
+      decorateComponent: true
+    }, _this.settings);
+    return _this;
   }
+
+  /**
+   * Render a React component
+   * @param message
+   */
+
 
   _createClass(ReactLoadableRenderVerticle, [{
     key: 'renderComponent',
-
-    /**
-     * Render a React component
-     *
-     * TODO: Support children
-     * @param message vert.x event bus message
-     * @param name Component name
-     * @param props Component props
-     */
     value: function renderComponent(message) {
       var _this2 = this;
 
       var _message$body = message.body(),
           name = _message$body.name,
-          props = _message$body.props;
+          props = _message$body.props,
+          _message$body$token = _message$body.token,
+          token = _message$body$token === undefined ? "" : _message$body$token;
 
       if ((typeof props === 'undefined' ? 'undefined' : _typeof(props)) !== 'object') return message.fail(2, 'Props must be object!');
 
@@ -75,7 +78,7 @@ var ReactLoadableRenderVerticle = exports.ReactLoadableRenderVerticle = function
       var dom = _server2.default.renderToString(element);
 
       message.reply({
-        DOM: this.decorateRenderedComponent(dom, name, "foo"),
+        DOM: this.decorateRenderedComponent(dom, name, token),
         bundleMeta: bundleMeta
       });
     }
