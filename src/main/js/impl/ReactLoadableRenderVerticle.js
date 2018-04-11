@@ -5,21 +5,20 @@ import ReactDOMServer from 'react-dom/server';
 
 import Loadable from 'react-loadable';
 
-
-// TRY REGULAR SSR WITH THE LOADABLE ON CLIENTSIDE
-
-
 export class ReactLoadableRenderVerticle extends AbstractSPARenderVerticle {
+  constructor(componentMap, settings = {}) {
+    super(componentMap, settings);
+    this.settings = Object.assign({
+      decorateComponent: true
+    }, this.settings);
+  }
+
   /**
    * Render a React component
-   *
-   * TODO: Support children
-   * @param message vert.x event bus message
-   * @param name Component name
-   * @param props Component props
+   * @param message
    */
   renderComponent(message) {
-    let { name, props } = message.body();
+    let { name, props, token = "" } = message.body();
     if (typeof props !== 'object')
       return message.fail(2, 'Props must be object!');
 
@@ -32,8 +31,11 @@ export class ReactLoadableRenderVerticle extends AbstractSPARenderVerticle {
     if (!resolved) return message.fail(3, 'Component not found!');
     let element = React.createElement(resolved, props);
 
+    let dom = ReactDOMServer.renderToString(element);
+    if (this.settings.decorateComponent) dom = this.decorateRenderedComponent(dom, name, token);
+
     message.reply({
-      DOM: ReactDOMServer.renderToString(element),
+      DOM: dom,
       bundleMeta: bundleMeta
     });
   }

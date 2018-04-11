@@ -72,6 +72,21 @@ export class AbstractSPARenderVerticle {
   }
 
   /**
+   * Adds extra HTML attributes the hydrator uses to find
+   * components on page.
+   * @param domString 
+   * @param componentName
+   * @param token
+   */
+  decorateRenderedComponent(domString, componentName, token) {
+    let domPieces = domString.split(" data-reactroot");
+    domPieces.splice(1, 0, "data-reactroot");
+    domPieces.splice(1, 0, `cmpnt-kind="${componentName}`);
+    domPieces.splice(1, 0, `id="cmpnt-${token}"`);
+    return domPieces.join(" ");
+  }
+
+  /**
    * Ask the SSR service for what components can be
    * rendered
    * @param message
