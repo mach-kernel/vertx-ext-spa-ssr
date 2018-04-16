@@ -84,7 +84,7 @@ var AbstractSPARenderVerticle = exports.AbstractSPARenderVerticle = function () 
       var found = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
 
       return Object.keys(object).reduce(function (acc, cur) {
-        if (typeof object[cur] === "undefined") return acc;
+        if (!object[cur]) return acc;
 
         if (Object.keys(object[cur]).length > 0) {
           return _this.buildModuleList(object[cur], parentName === '' ? cur : parentName + '/' + cur, acc);
@@ -108,7 +108,7 @@ var AbstractSPARenderVerticle = exports.AbstractSPARenderVerticle = function () 
     value: function decorateRenderedComponent(domString, componentName, token) {
       var domPieces = domString.split(" data-reactroot");
       domPieces.splice(1, 0, "data-reactroot");
-      domPieces.splice(1, 0, 'cmpnt-kind="' + componentName);
+      domPieces.splice(1, 0, 'cmpnt-kind="' + componentName + '"');
       domPieces.splice(1, 0, 'id="cmpnt-' + token + '"');
       return domPieces.join(" ");
     }

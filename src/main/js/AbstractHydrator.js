@@ -21,6 +21,7 @@ export class AbstractHydrator {
     });
 
     Object.assign(this.settings, settings);
+    if (!window[this.settings.ssrStateName]) window[this.settings.ssrStateName] = {};
 
     this.hydrate();
   }
