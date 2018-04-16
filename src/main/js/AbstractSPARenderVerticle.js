@@ -56,7 +56,7 @@ export class AbstractSPARenderVerticle {
    */
   buildModuleList(object, parentName = '', found = []) {
     return Object.keys(object).reduce((acc, cur) => {
-      if (typeof object[cur] === "undefined") return acc;
+      if (!object[cur]) return acc;
 
       if (Object.keys(object[cur]).length > 0) {
         return this.buildModuleList(
@@ -81,7 +81,7 @@ export class AbstractSPARenderVerticle {
   decorateRenderedComponent(domString, componentName, token) {
     let domPieces = domString.split(" data-reactroot");
     domPieces.splice(1, 0, "data-reactroot");
-    domPieces.splice(1, 0, `cmpnt-kind="${componentName}`);
+    domPieces.splice(1, 0, `cmpnt-kind="${componentName}"`);
     domPieces.splice(1, 0, `id="cmpnt-${token}"`);
     return domPieces.join(" ");
   }

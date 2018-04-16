@@ -76,9 +76,10 @@ var ReactLoadableRenderVerticle = exports.ReactLoadableRenderVerticle = function
       var element = _react2.default.createElement(resolved, props);
 
       var dom = _server2.default.renderToString(element);
+      if (this.settings.decorateComponent) dom = this.decorateRenderedComponent(dom, name, token);
 
       message.reply({
-        DOM: this.decorateRenderedComponent(dom, name, token),
+        DOM: dom,
         bundleMeta: bundleMeta
       });
     }
